@@ -2,14 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import 'expo-dev-client'
-import auth from '@react-native-firebase/auth'
+import 'expo-dev-client';
+import auth from '@react-native-firebase/auth';
+import { enableScreens } from 'react-native-screens';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 import { UserContext } from './contexts/UserContext';
 import AuthScreen from './src/screens/AuthScreen';
 import ChatScreen from './src/screens/ChatScreen';
-import { enableScreens } from 'react-native-screens';
 
+// Configurations
 enableScreens();
+GoogleSignin.configure({
+  webClientId: '304353663602-dr756veq7tgt276lovrjn0hao03atgn1.apps.googleusercontent.com',
+});
 
 const Stack = createStackNavigator();
 
@@ -35,7 +41,7 @@ function App() {
     <SafeAreaProvider>
       <UserContext.Provider value={user}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName={user ? "Chat" : "Auth"}>
+          <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={user ? "Chat" : "Auth"}>
             <Stack.Screen name="Auth" component={AuthScreen} />
             <Stack.Screen name="Chat" component={ChatScreen} />
           </Stack.Navigator>

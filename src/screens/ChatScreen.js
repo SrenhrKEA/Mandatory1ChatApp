@@ -6,22 +6,23 @@ import firestore from '@react-native-firebase/firestore';
 import { UserContext } from './../../contexts/UserContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-
 const db = firestore();
 const serverTimestamp = firestore.FieldValue.serverTimestamp;
-
-GoogleSignin.configure({
-    webClientId: '304353663602-dr756veq7tgt276lovrjn0hao03atgn1.apps.googleusercontent.com',
-});
 
 function ChatScreen() {
     return (
         <View style={{ flex: 1 }}>
-            <View style={{ alignItems: 'center', padding: 10 }}>
-                <Text style={{ fontSize: 24 }}>⚛️🔥💬</Text>
-                <SignOut />
-            </View>
+            <Header />
             <ChatRoom />
+        </View>
+    );
+}
+
+function Header() {
+    return (
+        <View style={{ alignItems: 'center', padding: 10 }}>
+            <Text style={{ fontSize: 24 }}>⚛️🔥💬</Text>
+            <SignOut />
         </View>
     );
 }
@@ -29,15 +30,6 @@ function ChatScreen() {
 function SignOut() {
     const navigation = useNavigation();
     const user = useContext(UserContext)
-
-    // const handleSignOut = async () => {
-    //     try {
-    //         await auth.signOut();
-    //         navigation.navigate('Auth');
-    //     } catch (error) {
-    //         console.error("Error during sign-out:", error);
-    //     }
-    // };
 
     const signOut = async () => {
         try {
@@ -119,8 +111,6 @@ function ChatMessage(props) {
 
     if (!props.message || !user) return null; // this line prevents the rendering if message is undefined
     const { text, uid, photoURL } = props.message;
-
-    // const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
 
     return (
         <View style={[styles.message, uid === user.uid ? styles.sent : styles.received]}>
