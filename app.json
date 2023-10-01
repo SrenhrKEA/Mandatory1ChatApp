@@ -2,6 +2,9 @@
   "expo": {
     "name": "Mandatory1ChatApp",
     "slug": "Mandatory1ChatApp",
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,13 +21,20 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.srenhr.Mandatory1ChatApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b9e05448-9ea0-4776-a707-80fb736da378"
+      }
     }
   }
 }
