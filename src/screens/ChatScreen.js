@@ -1,27 +1,31 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import storage from '@react-native-firebase/storage'
 import { UserContext } from './../../contexts/UserContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-const db = firestore();
-const serverTimestamp = firestore.FieldValue.serverTimestamp;
+import { Camera, CameraType } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 function ChatScreen() {
     return (
-        <View style={{ flex: 1 }}>
-            <Header />
-            <ChatRoom />
-        </View>
+        <SafeAreaProvider>
+            <View style={styles.container}>
+                <Header />
+                <ChatRoom />
+            </View>
+        </SafeAreaProvider>
     );
 }
 
 function Header() {
     return (
-        <View style={{ alignItems: 'center', padding: 10 }}>
-            <Text style={{ fontSize: 24 }}>⚛️🔥💬</Text>
+        <View style={styles.header}>
+            <Text style={styles.title}>⚛️🔥💬</Text>
+            <Text style={styles.title}>Chat App</Text>
             <SignOut />
         </View>
     );
@@ -49,6 +53,9 @@ function SignOut() {
 }
 
 function ChatRoom() {
+    const db = firestore();
+    const serverTimestamp = firestore.FieldValue.serverTimestamp;
+
     const scrollViewRef = useRef();
     const messagesRef = db.collection('messages');
     const [messages, setMessages] = useState([]);
@@ -85,7 +92,7 @@ function ChatRoom() {
     }
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={styles.container}>
             <ScrollView ref={scrollViewRef}>
                 {messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
                 <View></View>
@@ -96,7 +103,7 @@ function ChatRoom() {
                     style={styles.input}
                     value={formValue}
                     onChangeText={setFormValue}
-                    placeholder="say something nice"
+                    placeholder="Write a message..."
                 />
                 <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!formValue}>
                     <Text>🕊️</Text>
@@ -128,10 +135,28 @@ ChatMessage.defaultProps = {
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 24,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        width: '100%',
+        marginTop: 10,
+        marginBottom: 20,
+    },
     signOutButton: {
         padding: 10,
-        backgroundColor: 'red',
+        backgroundColor: '#1DA1F2',
         borderRadius: 5,
+        fontWeight: 'bold'
     },
     inputContainer: {
         flexDirection: 'row',
@@ -143,11 +168,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'gray',
         borderRadius: 5,
-        marginRight: 10,
+        paddingLeft: 10,
     },
     sendButton: {
+        margin: 5,
         padding: 10,
-        backgroundColor: 'blue',
+        backgroundColor: '#1DA1F2',
         borderRadius: 5,
     },
     message: {

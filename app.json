@@ -3,7 +3,19 @@
     "name": "Mandatory1ChatApp",
     "slug": "Mandatory1ChatApp",
     "plugins": [
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Chat App to access your camera."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ]
     ],
     "version": "1.0.0",
     "orientation": "portrait",

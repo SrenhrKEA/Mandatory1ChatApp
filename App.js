@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'expo-dev-client';
 import auth from '@react-native-firebase/auth';
 import { enableScreens } from 'react-native-screens';
@@ -38,7 +37,6 @@ function App() {
   if (initializing) return null;
 
   return (
-    <SafeAreaProvider>
       <UserContext.Provider value={user}>
         <NavigationContainer>
           <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={user ? "Chat" : "Auth"}>
@@ -47,7 +45,6 @@ function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </UserContext.Provider>
-    </SafeAreaProvider>
   )
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 
@@ -19,13 +20,15 @@ function AuthScreen() {
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>⚛️🔥💬</Text>
-            <Text>Newbie ChatApp</Text> 
-            <GoogleSigninButton
-                style={styles.signInButton}
-                onPress={onGoogleButtonPress} />
-        </View>
+        <SafeAreaProvider>
+            <View style={styles.container}>
+                <Text style={styles.title}>⚛️🔥💬</Text>
+                <Text style={styles.title}>Chat App</Text>
+                <GoogleSigninButton
+                    style={styles.signInButton}
+                    onPress={onGoogleButtonPress} />
+            </View>
+        </SafeAreaProvider>
     );
 }
 
@@ -40,7 +43,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     signInButton: {
-        width: 300,
+        width: 200,
         height: 65,
         marginTop: 30,
     }
