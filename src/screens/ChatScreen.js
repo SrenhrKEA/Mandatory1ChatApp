@@ -157,7 +157,6 @@ function ChatRoom() {
                 {messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
                 <View></View>
             </ScrollView>
-
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -165,11 +164,14 @@ function ChatRoom() {
                     onChangeText={setFormValue}
                     placeholder="Write a message..."
                 />
-                <TouchableOpacity onPress={pickImage}>
-                    <Text>Select Image</Text>
-                </TouchableOpacity>
                 <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!formValue}>
                     <Text>🕊️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sendButton} onPress={pickImage}>
+                    <Text>🖼️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sendButton}>
+                    <Text>📷</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     },
     sendButton: {
         margin: 5,
-        padding: 10,
+        padding: 5,
         backgroundColor: '#1DA1F2',
         borderRadius: 5,
     },
