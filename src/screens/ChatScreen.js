@@ -9,13 +9,28 @@ import { UserContext } from './../../contexts/UserContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Camera, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import { StatusBar } from 'expo-status-bar';
+
+const db = firestore();
+const messagesRef = db.collection('messages');
+const serverTimestamp = firestore.FieldValue.serverTimestamp;
 
 function ChatScreen() {
+    const [hasPermission, setHasPermission] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            setHasPermission(status === 'granted');
+        })();
+    }, []);
+
     return (
         <SafeAreaProvider>
             <View style={styles.container}>
                 <Header />
                 <ChatRoom />
+                <StatusBar style="auto" />
             </View>
         </SafeAreaProvider>
     );
@@ -53,11 +68,9 @@ function SignOut() {
 }
 
 function ChatRoom() {
-    const db = firestore();
-    const serverTimestamp = firestore.FieldValue.serverTimestamp;
 
     const scrollViewRef = useRef();
-    const messagesRef = db.collection('messages');
+
     const [messages, setMessages] = useState([]);
     const [formValue, setFormValue] = useState('');
     const user = useContext(UserContext)
@@ -75,21 +88,68 @@ function ChatRoom() {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = async (e) => {
+    const sendMessage = async (e, imageUrl) => {
         e.preventDefault();
 
         const { uid, photoURL } = user;
+        const messageContent = imageUrl ? imageUrl : formValue;
 
-        await messagesRef.add({
-            text: formValue,
-            createdAt: serverTimestamp(),
-            uid,
-            photoURL
+        try {
+            await messagesRef.add({
+                text: messageContent,
+                createdAt: serverTimestamp(),
+                uid,
+                photoURL,
+                messageType: imageUrl ? 'image' : 'text', // this distinguishes between text and image messages
+            });
+
+            setFormValue('');
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
+    }
+
+
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
         });
 
-        setFormValue('');
-        scrollViewRef.current.scrollToEnd({ animated: true });
-    }
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            uploadImage(result.assets[0].uri);
+        }
+    };
+
+    const uploadImage = async (uri) => {
+        try {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            console.log(blob.size, blob.type);
+            const ref = storage().ref().child(`media/${Date.now()}`);
+
+            await ref.put(blob);
+
+            // Use the ref directly to get the download URL
+            const downloadURL = await ref.getDownloadURL();
+
+            const { uid, photoURL } = user;
+            await messagesRef.add({
+                text: downloadURL,
+                createdAt: serverTimestamp(),
+                uid,
+                photoURL,
+                messageType: 'image',
+            });
+
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        } catch (error) {
+            console.error("Error uploading image:", error);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -105,6 +165,9 @@ function ChatRoom() {
                     onChangeText={setFormValue}
                     placeholder="Write a message..."
                 />
+                <TouchableOpacity onPress={pickImage}>
+                    <Text>Select Image</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!formValue}>
                     <Text>🕊️</Text>
                 </TouchableOpacity>
@@ -117,22 +180,18 @@ function ChatMessage(props) {
     const user = useContext(UserContext);
 
     if (!props.message || !user) return null; // this line prevents the rendering if message is undefined
-    const { text, uid, photoURL } = props.message;
+    const { text, uid, photoURL, messageType } = props.message;
 
     return (
         <View style={[styles.message, uid === user.uid ? styles.sent : styles.received]}>
             <Image source={{ uri: photoURL || 'https://avatars.githubusercontent.com/u/100341300?v=4' }} style={styles.avatar} />
-            <Text>{text}</Text>
+            {messageType === 'image' ?
+                <Image source={{ uri: text }} style={{ width: 150, height: 150, borderRadius: 5 }} /> :
+                <Text>{text}</Text>
+            }
         </View>
     );
 }
-
-ChatMessage.defaultProps = {
-    message: {
-        uid: '',
-        photoURL: ''
-    }
-};
 
 const styles = StyleSheet.create({
     container: {

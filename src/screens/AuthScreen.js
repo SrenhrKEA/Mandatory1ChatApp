@@ -4,6 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
+import { StatusBar } from 'expo-status-bar';
+
 
 function AuthScreen() {
     const navigation = useNavigation();
@@ -27,6 +29,7 @@ function AuthScreen() {
                 <GoogleSigninButton
                     style={styles.signInButton}
                     onPress={onGoogleButtonPress} />
+                <StatusBar style="auto" />
             </View>
         </SafeAreaProvider>
     );
