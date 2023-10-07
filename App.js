@@ -11,10 +11,10 @@ import AuthScreen from './src/screens/AuthScreen';
 import ChatScreen from './src/screens/ChatScreen';
 
 // Configurations
-enableScreens();
+enableScreens()
 GoogleSignin.configure({
   webClientId: '304353663602-dr756veq7tgt276lovrjn0hao03atgn1.apps.googleusercontent.com',
-});
+})
 
 const Stack = createStackNavigator();
 
@@ -32,7 +32,7 @@ function App() {
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber; //unsubscribe on unmount
-  }, []);
+  }, [])
 
   if (initializing) return null;
 

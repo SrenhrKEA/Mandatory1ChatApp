@@ -7,9 +7,29 @@ import auth from '@react-native-firebase/auth';
 import { StatusBar } from 'expo-status-bar';
 
 function AuthScreen() {
+    return (
+        <SafeAreaProvider>
+            <View style={styles.container}>
+                <Title />
+                <SignIn />
+                <StatusBar style="auto" />
+            </View>
+        </SafeAreaProvider >
+    );
+}
+
+function Title() {
+    return (
+        <View>
+            <Text style={styles.title}>⚛️🔥💬{"\n\n"}Chat App</Text>
+        </View>
+    );
+}
+
+function SignIn() {
     const navigation = useNavigation();
 
-    const onGoogleButtonPress = async () => {
+    const handleSignIn = async () => {
         try {
             const { idToken } = await GoogleSignin.signIn();
             const googleCredential = auth.GoogleAuthProvider.credential(idToken);
@@ -17,20 +37,16 @@ function AuthScreen() {
             navigation.navigate('Chat');
         } catch (error) {
             console.error(error);
+            Alert.alert("Error signing in", error.message);
         }
-    }
+    };
 
     return (
-        <SafeAreaProvider>
-            <View style={styles.container}>
-                <Text style={styles.title}>⚛️🔥💬</Text>
-                <Text style={styles.title}>Chat App</Text>
-                <GoogleSigninButton
-                    style={styles.signInButton}
-                    onPress={onGoogleButtonPress} />
-                <StatusBar style="auto" />
-            </View>
-        </SafeAreaProvider>
+        <View>
+            <GoogleSigninButton
+                style={styles.signInButton}
+                onPress={handleSignIn} />
+        </View>
     );
 }
 

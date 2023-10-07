@@ -5,15 +5,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage'
-import { UserContext } from './../../contexts/UserContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 
-const db = firestore();
-const messagesRef = db.collection('messages');
-const serverTimestamp = firestore.FieldValue.serverTimestamp;
+import { UserContext } from './../../contexts/UserContext';
+import { DEFAULT_AVATAR_URL } from '../constants/Constants'
 
 function ChatScreen() {
     return (
@@ -37,28 +35,11 @@ function Header() {
     );
 }
 
-function SignOut() {
-    const navigation = useNavigation();
-    const user = useContext(UserContext)
-
-    const signOut = async () => {
-        try {
-            await GoogleSignin.revokeAccess();
-            await auth().signOut();
-            navigation.navigate('Auth');
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    return user && (
-        <TouchableOpacity style={styles.signOutButton} onPress={signOut}>
-            <Text>Sign Out</Text>
-        </TouchableOpacity>
-    );
-}
-
 function ChatRoom() {
+    const db = firestore();
+    const messagesRef = db.collection('messages');
+    const serverTimestamp = firestore.FieldValue.serverTimestamp;
+
     const scrollViewRef = useRef();
     const [messages, setMessages] = useState([]);
     const [formValue, setFormValue] = useState('');
@@ -77,6 +58,10 @@ function ChatRoom() {
             // Requesting camera permission
             const cameraPermission = await Camera.requestCameraPermissionsAsync();
             setHasCameraPermission(cameraPermission.status === 'granted');
+
+            if (!galleryPermission || !cameraPermission) {
+                Alert.alert("Permission Denied", "The app might not work as expected without the necessary permissions.");
+            }
         })();
     }, []);
 
@@ -88,13 +73,15 @@ function ChatRoom() {
                     fetchedMessages.push({ ...doc.data(), id: doc.id });
                 });
                 setMessages(fetchedMessages);
+            }, error => {
+                console.error("Error fetching messages:", error);
+                Alert.alert("Error", "There was an issue fetching chat messages.");
             });
 
         return () => unsubscribe();
     }, []);
 
     const sendMessage = async (e, imageUrl) => {
-        e.preventDefault();
 
         const { uid, photoURL } = user;
         const messageContent = imageUrl ? imageUrl : formValue;
@@ -112,31 +99,52 @@ function ChatRoom() {
             scrollViewRef.current.scrollToEnd({ animated: true });
         } catch (error) {
             console.error("Error sending message:", error);
-        }
-    }
+            Alert.alert("Error", "There was an issue sending your message.");
+        };
+    };
 
     const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                quality: 0.5, // Set to half quality
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            });
 
-        if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (result.canceled) {
+                // User intentionally canceled; do nothing.
+                return;
+            }
+
+            if (!result.assets || result.assets.length === 0) {
+                // This is an unexpected scenario.
+                Alert.alert("Error", "No image was selected. Please try again.");
+                return;
+            }
+
             uploadImage(result.assets[0].uri);
+        } catch (error) {
+            console.error("Error picking image:", error);
+            Alert.alert("Error", "There was an issue picking an image.");
         }
     };
 
     const captureImage = async () => {
-        let result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
+        try {
+            let result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+            });
 
-        if (!result.canceled) {
-            uploadImage(result.assets[0].uri);
+            if (!result.canceled) {
+                uploadImage(result.assets[0].uri);
+            };
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            Alert.alert("Error", "There was an issue uploading your image.");
         }
     };
 
@@ -144,7 +152,6 @@ function ChatRoom() {
         try {
             const response = await fetch(uri);
             const blob = await response.blob();
-            console.log(blob.size, blob.type);
             const ref = storage().ref().child(`media/${Date.now()}`);
 
             await ref.put(blob);
@@ -161,7 +168,9 @@ function ChatRoom() {
                 messageType: 'image',
             });
 
-            scrollViewRef.current.scrollToEnd({ animated: true });
+            if (isNearEnd) {
+                scrollViewRef.current.scrollToEnd({ animated: true });
+            }
         } catch (error) {
             console.error("Error uploading image:", error);
         }
@@ -180,19 +189,25 @@ function ChatRoom() {
                     onChangeText={setFormValue}
                     placeholder="Write a message..."
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!formValue}>
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={sendMessage}
+                    disabled={!formValue}
+                    accessibilityLabel="Send text message">
                     <Text>🕊️</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.sendButton}
                     onPress={pickImage}
-                    disabled={!hasGalleryPermission}>
+                    disabled={!hasGalleryPermission}
+                    accessibilityLabel="Send image/video from gallery">
                     <Text>🖼️</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.sendButton}
                     onPress={captureImage}
-                    disabled={!hasCameraPermission}>
+                    disabled={!hasCameraPermission}
+                    accessibilityLabel="Send image/video taken with camera">
                     <Text>📸</Text>
                 </TouchableOpacity>
             </View>
@@ -203,17 +218,39 @@ function ChatRoom() {
 function ChatMessage(props) {
     const user = useContext(UserContext);
 
-    if (!props.message || !user) return null; // this line prevents the rendering if message is undefined
+    if (!props.message || !user) return null;
     const { text, uid, photoURL, messageType } = props.message;
 
     return (
         <View style={[styles.message, uid === user.uid ? styles.sent : styles.received]}>
-            <Image source={{ uri: photoURL || 'https://avatars.githubusercontent.com/u/100341300?v=4' }} style={styles.avatar} />
+            <Image source={{ uri: photoURL || DEFAULT_AVATAR_URL }} style={styles.avatar} />
             {messageType === 'image' ?
                 <Image source={{ uri: text }} style={styles.image} /> :
                 <Text>{text}</Text>
             }
         </View>
+    );
+}
+
+function SignOut() {
+    const navigation = useNavigation();
+    const user = useContext(UserContext);
+
+    const handleSignOut = async () => {
+        try {
+            await GoogleSignin.revokeAccess();
+            await auth().signOut();
+            navigation.navigate('Auth');
+        } catch (error) {
+            console.error(error);
+            Alert.alert("Error signing out", error.message);
+        };
+    };
+
+    return user && (
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <Text>Sign Out</Text>
+        </TouchableOpacity>
     );
 }
 
@@ -224,6 +261,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
         width: 40,
     },
+
     container: {
         alignItems: 'center',
         flex: 1,
