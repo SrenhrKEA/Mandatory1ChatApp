@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
@@ -7,7 +7,7 @@ import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage'
 import { UserContext } from './../../contexts/UserContext';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { Camera, CameraType } from 'expo-camera';
+import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 
@@ -16,15 +16,6 @@ const messagesRef = db.collection('messages');
 const serverTimestamp = firestore.FieldValue.serverTimestamp;
 
 function ChatScreen() {
-    const [hasPermission, setHasPermission] = useState(null);
-
-    useEffect(() => {
-        (async () => {
-            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            setHasPermission(status === 'granted');
-        })();
-    }, []);
-
     return (
         <SafeAreaProvider>
             <View style={styles.container}>
@@ -68,12 +59,26 @@ function SignOut() {
 }
 
 function ChatRoom() {
-
     const scrollViewRef = useRef();
-
     const [messages, setMessages] = useState([]);
     const [formValue, setFormValue] = useState('');
     const user = useContext(UserContext)
+
+    // Permissions
+    const [hasGalleryPermission, setHasGalleryPermission] = useState(null);
+    const [hasCameraPermission, setHasCameraPermission] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+            // Requesting gallery permission
+            const galleryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            setHasGalleryPermission(galleryPermission.status === 'granted');
+
+            // Requesting camera permission
+            const cameraPermission = await Camera.requestCameraPermissionsAsync();
+            setHasCameraPermission(cameraPermission.status === 'granted');
+        })();
+    }, []);
 
     useEffect(() => {
         const unsubscribe = messagesRef.orderBy('createdAt').limit(25)
@@ -110,7 +115,6 @@ function ChatRoom() {
         }
     }
 
-
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -120,6 +124,18 @@ function ChatRoom() {
         });
 
         if (!result.canceled && result.assets && result.assets.length > 0) {
+            uploadImage(result.assets[0].uri);
+        }
+    };
+
+    const captureImage = async () => {
+        let result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
             uploadImage(result.assets[0].uri);
         }
     };
@@ -167,11 +183,17 @@ function ChatRoom() {
                 <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!formValue}>
                     <Text>🕊️</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sendButton} onPress={pickImage}>
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={pickImage}
+                    disabled={!hasGalleryPermission}>
                     <Text>🖼️</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sendButton}>
-                    <Text>📷</Text>
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={captureImage}
+                    disabled={!hasCameraPermission}>
+                    <Text>📸</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -188,7 +210,7 @@ function ChatMessage(props) {
         <View style={[styles.message, uid === user.uid ? styles.sent : styles.received]}>
             <Image source={{ uri: photoURL || 'https://avatars.githubusercontent.com/u/100341300?v=4' }} style={styles.avatar} />
             {messageType === 'image' ?
-                <Image source={{ uri: text }} style={{ width: 150, height: 150, borderRadius: 5 }} /> :
+                <Image source={{ uri: text }} style={styles.image} /> :
                 <Text>{text}</Text>
             }
         </View>
@@ -196,67 +218,71 @@ function ChatMessage(props) {
 }
 
 const styles = StyleSheet.create({
+    avatar: {
+        borderRadius: 20,
+        height: 40,
+        marginRight: 10,
+        width: 40,
+    },
     container: {
-        flex: 1,
         alignItems: 'center',
+        flex: 1,
         justifyContent: 'center',
     },
-    title: {
-        fontSize: 24,
-    },
     header: {
+        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
+        marginBottom: 20,
+        marginTop: 10,
         padding: 10,
         width: '100%',
-        marginTop: 10,
-        marginBottom: 20,
     },
-    signOutButton: {
-        padding: 10,
-        backgroundColor: '#1DA1F2',
+    image: {
         borderRadius: 5,
-        fontWeight: 'bold'
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
+        height: 150,
+        width: 150,
     },
     input: {
-        flex: 1,
-        borderWidth: 1,
         borderColor: 'gray',
         borderRadius: 5,
+        borderWidth: 1,
+        flex: 1,
         paddingLeft: 10,
     },
-    sendButton: {
-        margin: 5,
-        padding: 5,
-        backgroundColor: '#1DA1F2',
-        borderRadius: 5,
-    },
-    message: {
-        flexDirection: 'row',
+    inputContainer: {
         alignItems: 'center',
+        flexDirection: 'row',
         padding: 10,
     },
-    sent: {
-        alignSelf: 'flex-end',
-        backgroundColor: 'lightblue',
+    message: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        padding: 10,
     },
     received: {
         alignSelf: 'flex-start',
         backgroundColor: 'lightgray',
     },
-    avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 10,
+    sendButton: {
+        backgroundColor: '#1DA1F2',
+        borderRadius: 5,
+        margin: 5,
+        padding: 5,
+    },
+    sent: {
+        alignSelf: 'flex-end',
+        backgroundColor: 'lightblue',
+    },
+    signOutButton: {
+        backgroundColor: '#1DA1F2',
+        borderRadius: 5,
+        fontWeight: 'bold',
+        padding: 10,
+    },
+    title: {
+        fontSize: 24,
     },
 });
-
 
 export default ChatScreen;

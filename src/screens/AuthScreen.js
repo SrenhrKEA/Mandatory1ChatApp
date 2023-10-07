@@ -6,7 +6,6 @@ import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/go
 import auth from '@react-native-firebase/auth';
 import { StatusBar } from 'expo-status-bar';
 
-
 function AuthScreen() {
     const navigation = useNavigation();
 
@@ -41,15 +40,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
-    },
     signInButton: {
         width: 200,
         height: 65,
         marginTop: 30,
-    }
+    },
+    title: {
+        fontSize: 24,
+        marginBottom: 20,
+    },
 });
 
 export default AuthScreen;
