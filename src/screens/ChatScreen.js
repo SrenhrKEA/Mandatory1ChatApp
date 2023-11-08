@@ -65,6 +65,7 @@ function ChatRoom() {
         })();
     }, []);
 
+    //Fetching messages
     useEffect(() => {
         const unsubscribe = messagesRef.orderBy('createdAt').limit(25)
             .onSnapshot(snapshot => {
@@ -81,8 +82,7 @@ function ChatRoom() {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = async (e, imageUrl) => {
-
+    const sendMessage = async ( imageUrl) => {
         const { uid, photoURL } = user;
         const messageContent = imageUrl ? imageUrl : formValue;
 
@@ -153,10 +153,8 @@ function ChatRoom() {
             const response = await fetch(uri);
             const blob = await response.blob();
             const ref = storage().ref().child(`media/${Date.now()}`);
-
+            
             await ref.put(blob);
-
-            // Use the ref directly to get the download URL
             const downloadURL = await ref.getDownloadURL();
 
             const { uid, photoURL } = user;
@@ -218,6 +216,7 @@ function ChatRoom() {
 function ChatMessage(props) {
     const user = useContext(UserContext);
 
+    // Safeguard against rendering incomplete or invalid chat messages
     if (!props.message || !user) return null;
     const { text, uid, photoURL, messageType } = props.message;
 
@@ -255,71 +254,70 @@ function SignOut() {
 }
 
 const styles = StyleSheet.create({
-    avatar: {
-        borderRadius: 20,
-        height: 40,
-        marginRight: 10,
-        width: 40,
-    },
-
     container: {
-        alignItems: 'center',
         flex: 1,
+        alignItems: 'center',
         justifyContent: 'center',
     },
     header: {
-        alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 20,
-        marginTop: 10,
-        padding: 10,
-        width: '100%',
-    },
-    image: {
-        borderRadius: 5,
-        height: 150,
-        width: 150,
-    },
-    input: {
-        borderColor: 'gray',
-        borderRadius: 5,
-        borderWidth: 1,
-        flex: 1,
-        paddingLeft: 10,
-    },
-    inputContainer: {
         alignItems: 'center',
-        flexDirection: 'row',
+        width: '100%',
         padding: 10,
+        marginTop: 10,
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 24,
+    },
+    signOutButton: {
+        padding: 10,
+        borderRadius: 5,
+        backgroundColor: '#1DA1F2',
+        fontWeight: 'bold',
     },
     message: {
-        alignItems: 'center',
         flexDirection: 'row',
+        alignItems: 'center',
         padding: 10,
-    },
-    received: {
-        alignSelf: 'flex-start',
-        backgroundColor: 'lightgray',
-    },
-    sendButton: {
-        backgroundColor: '#1DA1F2',
-        borderRadius: 5,
-        margin: 5,
-        padding: 5,
     },
     sent: {
         alignSelf: 'flex-end',
         backgroundColor: 'lightblue',
     },
-    signOutButton: {
-        backgroundColor: '#1DA1F2',
+    received: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'lightgray',
+    },
+    avatar: {
+        marginRight: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+    },
+    image: {
+        width: 150,
+        height: 150,
         borderRadius: 5,
-        fontWeight: 'bold',
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         padding: 10,
     },
-    title: {
-        fontSize: 24,
+    input: {
+        flex: 1,
+        paddingLeft: 10,
+        borderWidth: 1,
+        borderColor: 'gray',
+        borderRadius: 5,
+    },
+    sendButton: {
+        padding: 5,
+        margin: 5,
+        borderRadius: 5,
+        backgroundColor: '#1DA1F2',
     },
 });
 

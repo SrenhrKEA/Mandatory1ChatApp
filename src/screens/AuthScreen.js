@@ -28,7 +28,7 @@ function Title() {
 
 function SignIn() {
     const navigation = useNavigation();
-
+    
     const handleSignIn = async () => {
         try {
             const { idToken } = await GoogleSignin.signIn();
