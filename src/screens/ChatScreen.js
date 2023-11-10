@@ -82,25 +82,27 @@ function ChatRoom() {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = async ( imageUrl) => {
+    const sendMessage = async () => {
         const { uid, photoURL } = user;
-        const messageContent = imageUrl ? imageUrl : formValue;
+        const messageContent = formValue.trim(); // Trim the message to remove leading/trailing spaces
 
-        try {
-            await messagesRef.add({
-                text: messageContent,
-                createdAt: serverTimestamp(),
-                uid,
-                photoURL,
-                messageType: imageUrl ? 'image' : 'text', // this distinguishes between text and image messages
-            });
+        if (messageContent) {
+            try {
+                await messagesRef.add({
+                    text: messageContent,
+                    createdAt: serverTimestamp(),
+                    uid,
+                    photoURL,
+                    messageType: 'text',
+                });
 
-            setFormValue('');
-            scrollViewRef.current.scrollToEnd({ animated: true });
-        } catch (error) {
-            console.error("Error sending message:", error);
-            Alert.alert("Error", "There was an issue sending your message.");
-        };
+                setFormValue('');
+                scrollViewRef.current.scrollToEnd({ animated: true });
+            } catch (error) {
+                console.error("Error sending message:", error);
+                Alert.alert("Error", "There was an issue sending your message.");
+            };
+        }
     };
 
     const pickImage = async () => {
@@ -153,7 +155,7 @@ function ChatRoom() {
             const response = await fetch(uri);
             const blob = await response.blob();
             const ref = storage().ref().child(`media/${Date.now()}`);
-            
+
             await ref.put(blob);
             const downloadURL = await ref.getDownloadURL();
 
@@ -166,9 +168,8 @@ function ChatRoom() {
                 messageType: 'image',
             });
 
-            if (isNearEnd) {
-                scrollViewRef.current.scrollToEnd({ animated: true });
-            }
+            scrollViewRef.current.scrollToEnd({ animated: true });
+
         } catch (error) {
             console.error("Error uploading image:", error);
         }
@@ -220,13 +221,20 @@ function ChatMessage(props) {
     if (!props.message || !user) return null;
     const { text, uid, photoURL, messageType } = props.message;
 
+    // Determine if the message is sent by the signed-in user
+    const isSentByUser = uid === user.uid;
+
     return (
-        <View style={[styles.message, uid === user.uid ? styles.sent : styles.received]}>
+        <View style={[
+            styles.messageContainer,
+            isSentByUser ? styles.sentMessageContainer : styles.receivedMessageContainer
+        ]}>
             <Image source={{ uri: photoURL || DEFAULT_AVATAR_URL }} style={styles.avatar} />
-            {messageType === 'image' ?
-                <Image source={{ uri: text }} style={styles.image} /> :
+            {messageType === 'image' ? (
+                <Image source={{ uri: text }} style={styles.image} />
+            ) : (
                 <Text>{text}</Text>
-            }
+            )}
         </View>
     );
 }
@@ -276,6 +284,18 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: '#1DA1F2',
         fontWeight: 'bold',
+    },
+    messageContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        width: '100%', // Ensures the message container takes up the full width
+    },
+    sentMessageContainer: {
+        justifyContent: 'flex-end', // Right-align for sent messages
+    },
+    receivedMessageContainer: {
+        justifyContent: 'flex-start', // Left-align for received messages
     },
     message: {
         flexDirection: 'row',
