@@ -9,6 +9,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { UserContext } from './contexts/UserContext';
 import AuthScreen from './src/screens/AuthScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import MapScreen from './src/screens/MapScreen';
 
 // Configurations
 enableScreens()
@@ -37,14 +38,16 @@ function App() {
   if (initializing) return null;
 
   return (
-      <UserContext.Provider value={user}>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={user ? "Chat" : "Auth"}>
-            <Stack.Screen name="Auth" component={AuthScreen} />
-            <Stack.Screen name="Chat" component={ChatScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </UserContext.Provider>
+    <UserContext.Provider value={user}>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={user ? "Chat" : "Auth"}>
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="Map" component={MapScreen} />
+
+        </Stack.Navigator>
+      </NavigationContainer>
+    </UserContext.Provider>
   )
 }
 

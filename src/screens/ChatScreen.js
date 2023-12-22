@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, Button } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
@@ -9,6 +9,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
+import * as Location from 'expo-location';
 
 import { UserContext } from './../../contexts/UserContext';
 import { DEFAULT_AVATAR_URL } from '../constants/Constants'
@@ -48,6 +49,7 @@ function ChatRoom() {
     // Permissions
     const [hasGalleryPermission, setHasGalleryPermission] = useState(null);
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
+    const [hasLocationPermission, setHasLocationPermission] = useState(null);
 
     useEffect(() => {
         (async () => {
@@ -59,11 +61,23 @@ function ChatRoom() {
             const cameraPermission = await Camera.requestCameraPermissionsAsync();
             setHasCameraPermission(cameraPermission.status === 'granted');
 
-            if (!galleryPermission || !cameraPermission) {
-                Alert.alert("Permission Denied", "The app might not work as expected without the necessary permissions.");
+            // Requesting location permission
+            const locationPermission = await Location.requestForegroundPermissionsAsync();
+            setHasLocationPermission(locationPermission.status === 'granted');
+
+            // Checking and alerting on any denied permission
+            if (!galleryPermission.granted) {
+                Alert.alert("Permission Denied", "Access to the gallery is needed.");
+            }
+            if (!cameraPermission.granted) {
+                Alert.alert("Permission Denied", "Camera access is needed.");
+            }
+            if (!locationPermission.granted) {
+                Alert.alert("Permission Denied", "Location access is needed.");
             }
         })();
     }, []);
+
 
     //Fetching messages
     useEffect(() => {
@@ -88,13 +102,23 @@ function ChatRoom() {
 
         if (messageContent) {
             try {
-                await messagesRef.add({
+                const messageData = {
                     text: messageContent,
                     createdAt: serverTimestamp(),
                     uid,
                     photoURL,
                     messageType: 'text',
-                });
+                };
+
+                // Check if location permission is granted
+                if (hasLocationPermission) {
+                    const location = await getLocation();
+                    if (location) {
+                        messageData.location = new firestore.GeoPoint(location.coords.latitude, location.coords.longitude);
+                    }
+                }
+
+                await messagesRef.add(messageData);
 
                 setFormValue('');
                 scrollViewRef.current.scrollToEnd({ animated: true });
@@ -259,6 +283,16 @@ function SignOut() {
             <Text>Sign Out</Text>
         </TouchableOpacity>
     );
+}
+
+async function getLocation() {
+    try {
+        let location = await Location.getCurrentPositionAsync({});
+        return location; // Or format it as needed
+    } catch (error) {
+        console.error("Error getting location:", error);
+        return null;
+    }
 }
 
 const styles = StyleSheet.create({
