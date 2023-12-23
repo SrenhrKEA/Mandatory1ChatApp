@@ -44,7 +44,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.srenhr.Mandatory1ChatApp"
+      "package": "com.srenhr.Mandatory1ChatApp",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAmnIPkZ0Vc_jEylwuTZLe2vWkO7ZD8FbE"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

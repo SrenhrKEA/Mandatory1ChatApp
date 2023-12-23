@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
@@ -184,13 +184,23 @@ function ChatRoom() {
             const downloadURL = await ref.getDownloadURL();
 
             const { uid, photoURL } = user;
-            await messagesRef.add({
+            const messageData = {
                 text: downloadURL,
                 createdAt: serverTimestamp(),
                 uid,
                 photoURL,
                 messageType: 'image',
-            });
+            };
+
+            // Check if location permission is granted
+            if (hasLocationPermission) {
+                const location = await getLocation();
+                if (location) {
+                    messageData.location = new firestore.GeoPoint(location.coords.latitude, location.coords.longitude);
+                }
+            }
+
+            await messagesRef.add(messageData);
 
             scrollViewRef.current.scrollToEnd({ animated: true });
 
@@ -240,28 +250,44 @@ function ChatRoom() {
 
 function ChatMessage(props) {
     const user = useContext(UserContext);
+    const navigation = useNavigation();
+    const [lastTap, setLastTap] = useState(null);
 
-    // Safeguard against rendering incomplete or invalid chat messages
     if (!props.message || !user) return null;
-    const { text, uid, photoURL, messageType } = props.message;
-
-    // Determine if the message is sent by the signed-in user
+    const { text, uid, photoURL, messageType, location } = props.message;
     const isSentByUser = uid === user.uid;
 
+    const handleTap = () => {
+        const now = Date.now();
+        if (lastTap && (now - lastTap) < 300) {
+            // Detected double tap
+            setLastTap(null); // Reset lastTap
+            if (location) {
+                // navigation.navigate('Map', { location });
+                navigation.navigate('Map', { location: props.message.location });
+            }
+        } else {
+            setLastTap(now); // Set the current time as lastTap
+        }
+    };
+
     return (
-        <View style={[
-            styles.messageContainer,
-            isSentByUser ? styles.sentMessageContainer : styles.receivedMessageContainer
-        ]}>
-            <Image source={{ uri: photoURL || DEFAULT_AVATAR_URL }} style={styles.avatar} />
-            {messageType === 'image' ? (
-                <Image source={{ uri: text }} style={styles.image} />
-            ) : (
-                <Text>{text}</Text>
-            )}
-        </View>
+        <TouchableOpacity onPress={handleTap} activeOpacity={0.7}>
+            <View style={[
+                styles.messageContainer,
+                isSentByUser ? styles.sentMessageContainer : styles.receivedMessageContainer
+            ]}>
+                <Image source={{ uri: photoURL || DEFAULT_AVATAR_URL }} style={styles.avatar} />
+                {messageType === 'image' ? (
+                    <Image source={{ uri: text }} style={styles.image} />
+                ) : (
+                    <Text>{text}</Text>
+                )}
+            </View>
+        </TouchableOpacity>
     );
 }
+
 
 function SignOut() {
     const navigation = useNavigation();
