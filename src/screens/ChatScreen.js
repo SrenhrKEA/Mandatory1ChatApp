@@ -1,18 +1,19 @@
 import React, { useRef, useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage'
+import storage from '@react-native-firebase/storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
 
+import { styles } from '../styles/Styles';
 import { UserContext } from './../../contexts/UserContext';
-import { DEFAULT_AVATAR_URL } from '../constants/Constants'
+import { DEFAULT_AVATAR_URL } from '../constants/Constants';
 
 function ChatScreen() {
     return (
@@ -98,7 +99,7 @@ function ChatRoom() {
 
     const sendMessage = async () => {
         const { uid, photoURL } = user;
-        const messageContent = formValue.trim(); // Trim the message to remove leading/trailing spaces
+        const messageContent = formValue.trim();
 
         if (messageContent) {
             try {
@@ -110,7 +111,6 @@ function ChatRoom() {
                     messageType: 'text',
                 };
 
-                // Check if location permission is granted
                 if (hasLocationPermission) {
                     const location = await getLocation();
                     if (location) {
@@ -132,7 +132,7 @@ function ChatRoom() {
     const pickImage = async () => {
         try {
             let result = await ImagePicker.launchImageLibraryAsync({
-                quality: 0.5, // Set to half quality
+                quality: 0.5,
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [4, 3],
@@ -140,12 +140,10 @@ function ChatRoom() {
             });
 
             if (result.canceled) {
-                // User intentionally canceled; do nothing.
                 return;
             }
 
             if (!result.assets || result.assets.length === 0) {
-                // This is an unexpected scenario.
                 Alert.alert("Error", "No image was selected. Please try again.");
                 return;
             }
@@ -192,7 +190,6 @@ function ChatRoom() {
                 messageType: 'image',
             };
 
-            // Check if location permission is granted
             if (hasLocationPermission) {
                 const location = await getLocation();
                 if (location) {
@@ -263,7 +260,6 @@ function ChatMessage(props) {
             // Detected double tap
             setLastTap(null); // Reset lastTap
             if (location) {
-                // navigation.navigate('Map', { location });
                 navigation.navigate('Map', { location: props.message.location });
             }
         } else {
@@ -287,7 +283,6 @@ function ChatMessage(props) {
         </TouchableOpacity>
     );
 }
-
 
 function SignOut() {
     const navigation = useNavigation();
@@ -314,91 +309,11 @@ function SignOut() {
 async function getLocation() {
     try {
         let location = await Location.getCurrentPositionAsync({});
-        return location; // Or format it as needed
+        return location;
     } catch (error) {
         console.error("Error getting location:", error);
         return null;
     }
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        padding: 10,
-        marginTop: 10,
-        marginBottom: 20,
-    },
-    title: {
-        fontSize: 24,
-    },
-    signOutButton: {
-        padding: 10,
-        borderRadius: 5,
-        backgroundColor: '#1DA1F2',
-        fontWeight: 'bold',
-    },
-    messageContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-        width: '100%', // Ensures the message container takes up the full width
-    },
-    sentMessageContainer: {
-        justifyContent: 'flex-end', // Right-align for sent messages
-    },
-    receivedMessageContainer: {
-        justifyContent: 'flex-start', // Left-align for received messages
-    },
-    message: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-    },
-    sent: {
-        alignSelf: 'flex-end',
-        backgroundColor: 'lightblue',
-    },
-    received: {
-        alignSelf: 'flex-start',
-        backgroundColor: 'lightgray',
-    },
-    avatar: {
-        marginRight: 10,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-    },
-    image: {
-        width: 150,
-        height: 150,
-        borderRadius: 5,
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 10,
-    },
-    input: {
-        flex: 1,
-        paddingLeft: 10,
-        borderWidth: 1,
-        borderColor: 'gray',
-        borderRadius: 5,
-    },
-    sendButton: {
-        padding: 5,
-        margin: 5,
-        borderRadius: 5,
-        backgroundColor: '#1DA1F2',
-    },
-});
 
 export default ChatScreen;

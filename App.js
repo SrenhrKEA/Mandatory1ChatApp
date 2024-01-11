@@ -6,6 +6,7 @@ import auth from '@react-native-firebase/auth';
 import { enableScreens } from 'react-native-screens';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
+import { WEB_CLIENT_ID } from './src/constants/Constants';
 import { UserContext } from './contexts/UserContext';
 import AuthScreen from './src/screens/AuthScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -14,7 +15,7 @@ import MapScreen from './src/screens/MapScreen';
 // Configurations
 enableScreens()
 GoogleSignin.configure({
-  webClientId: '304353663602-dr756veq7tgt276lovrjn0hao03atgn1.apps.googleusercontent.com',
+  webClientId: WEB_CLIENT_ID,
 })
 
 const Stack = createStackNavigator();
